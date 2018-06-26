@@ -3,8 +3,9 @@
 ;	cat_match
 ;   
 ; PURPOSE:
-;   Match and combine two catalogs stored in IDL structure format. Match the catalogs 
-;   by INNER/OUTER/LEFT join, and combine within a specified angular separation.
+;   Match and combine two catalogs stored in IDL structure format. Catalogs are matched 
+;   by INNER/OUTER/LEFT join, and combined within a specified angular separation. The
+;   special SUPPLEMENT join can be used to add additional fields to cat1 (see comments).
 ;
 ; CALLING SEQUENCE:
 ;   cc = cat_match( cat1, cat2, label1, label2, ang, [, JOIN= ] )
@@ -17,6 +18,7 @@
 ;
 ; OPTIONAL INPUTS:
 ;   JOIN            - String containing the join type, either 'INNER', 'OUTER', or 'LEFT'.
+;   /TAGS_ONLY      - Keyword to signal appending of tags only; no data to be added.
 ;
 ; OUTPUTS:
 ;   cc              - Combined catalogs.
@@ -47,6 +49,9 @@
 ;   By default, cat2 is the catalog matched to cat1, and the 'SEPARATION' label will 
 ;   be constructed from label2.
 ;
+;   The SUPPLEMENT join can be used when cat1 and cat2 have identical fields except for 
+;   additional fields appended to cat2.
+;
 ; EXAMPLES:
 ;   
 ; PROCEDURES CALLED:
@@ -60,7 +65,8 @@ FUNCTION cat_match, cat1, $
                     label1, $
                     label2, $
                     ang, $
-		            JOIN = join
+		            JOIN = join, $
+		            TAGS = tags
 
 
 ;; ensure join is set and uppercase
@@ -81,80 +87,125 @@ if (total(ic1m) eq -1) then matchlen = 0 else $
 
 case join of
 	'INNER': begin
-	            ;; no matches on inner join
-				if (matchlen eq 0) then begin
-					print, 'WARNING: NO MATCHES FOR INNER JOIN'
-					cc = !NULL
-				endif
-				;; use first source of each catalog to combine catalog tags
-			 	cc = struct_addtags(cat1[0],cat2[0])
-			 	;; clear the values from the tag combine
-				for t = 0,n_tags(cc)-1 do if (typename(cc.(t)) eq 'STRING') then cc.(t) = '' else $
-																			    cc.(t) = -9999.
-				;; add default separation tag
-				struct_add_field,cc,sep_label,-9999.		 	        
-			 	cc = replicate(cc,matchlen)
-			 	;; add data from each catalog
-			 	for t = 0,n_tags(cat1)-1 do cc.(t) = cat1[ic1m].(t)
-			 	for t = 0,n_tags(cat2)-1 do cc.(n_tags(cat1)+t) = cat2[ic2m].(t)
-			 	;; add angular separation distance
-				re = execute('cc.'+sep_label+' = sep')
-			 end
+        ;; no matches on inner join
+        if (matchlen eq 0) then begin
+            print, 'WARNING: NO MATCHES FOR INNER JOIN'
+            cc = !NULL
+        endif
+        ;; use first source of each catalog to combine catalog tags
+        cc = struct_addtags(cat1[0],cat2[0])
+        ;; clear the values from the tag combine
+        for t = 0,n_tags(cc)-1 do if (typename(cc.(t)) eq 'STRING') then cc.(t) = '' else $
+                                                                         cc.(t) = -9999.
+        ;; add default separation tag
+        struct_add_field,cc,sep_label,-9999.		 	        
+        cc = replicate(cc,matchlen)
+        ;; add data from each catalog
+        for t = 0,n_tags(cat1)-1 do cc.(t) = cat1[ic1m].(t)
+        for t = 0,n_tags(cat2)-1 do cc.(n_tags(cat1)+t) = cat2[ic2m].(t)
+        ;; add angular separation distance
+        re = execute('cc.'+sep_label+' = sep')
+    end
 	'OUTER': begin
-				;; use first source of each catalog to combine catalog tags
-				cc = struct_addtags(cat1[0],cat2[0])
-			 	;; clear the values from the tag combine
-				for t = 0,n_tags(cc)-1 do if (typename(r.(t)) eq 'STRING') then cc.(t) = '' else $
-																			    cc.(t) = -9999.
-				;; add default separation, RA, DEC tags
-				struct_add_field,cc,sep_label,-9999.
-				struct_add_field,cc,'RA',-9999.
-				struct_add_field,cc,'DEC',-9999.
-				cc = replicate(cc,c1len+c2len-matchlen)
-                ;; if no matches...
-				if (matchlen eq 0) then begin
-					for t = 0,n_tags(cat1)-1 do cc[0:c1len-1].(t) = cat1.(t)                ;; add catalog 1 data
-					re = execute('cc[0:c1len-1].ra = cc[0:c1len-1].RA'+label1)
-					re = execute('cc[0:c1len-1].dec = cc[0:c1len-1].DEC'+label1)
-					for t = 0,n_tags(cat2)-1 do cc[c1len:-1].(n_tags(cat1)+t) = cat2.(t)    ;; add catalog 2 data
-					re = execute('cc[c1len:-1].ra = cc[c1len:-1].RA'+label2)
-					re = execute('cc[c1len:-1].dec = cc[c1len:-1].DEC'+label2)
-				;; if matches... 
-				endif else begin
-					for t = 0,n_tags(cat1)-1 do cc[ic1m].(t) = cat1[ic1m].(t)               ;; add matched catalog 1 data
-					for t = 0,n_tags(cat2)-1 do cc[ic1m].(n_tags(cat1)+t) = cat2[ic2m].(t)  ;; add matched catalog 2 data
-					re = execute('cc[ic1m].'+sep_label+' = sep')
-					re = execute('cc[ic1m].ra = cc[ic1m].RA'+label1)
-					re = execute('cc[ic1m].dec = cc[ic1m].DEC'+label1)
-                    ;; add remaining catalog 1 data to the end of cc
-					ic1_extra = exclude(ic1m,cat1)
-					for t = 0,n_tags(cat1)-1 do cc[ic1_extra].(t) = cat1[ic1_extra].(t)
-					re = execute('cc[ic1_extra].ra = cc[ic1_extra].RA'+label1)
-					re = execute('cc[ic1_extra].dec = cc[ic1_extra].DEC'+label1)
-					;; add remaining catalog 2 data to the end of cc
-					ic2_extra = exclude(ic2m,cat2)
-					for t = 0,n_tags(cat2)-1 do cc[c1len:-1].(n_tags(cat1)+t) = cat2[ic2_extra].(t)
-					re = execute('cc[c1len:-1].ra = cc[c1len:-1].RA'+label2)
-					re = execute('cc[c1len:-1].dec = cc[c1len:-1].DEC'+label2)
-				endelse
-			 end
+        ;; use first source of each catalog to combine catalog tags
+        cc = struct_addtags(cat1[0],cat2[0])
+        ;; clear the values from the tag combine
+        for t = 0,n_tags(cc)-1 do if (typename(r.(t)) eq 'STRING') then cc.(t) = '' else $
+                                                                        cc.(t) = -9999.
+        ;; add default separation, RA, DEC tags
+        struct_add_field,cc,sep_label,-9999.
+        struct_add_field,cc,'RA',-9999.
+        struct_add_field,cc,'DEC',-9999.
+        ;; check if keyword set to append tags and not data
+        if keyword_set(tags_only) then begin
+            cc = replicate(cc,c1len)
+            for t = 0,n_tags(cat1)-1 do cc[0:c1len-1].(t) = cat1.(t)                ;; retain catalog 1 data
+            re = execute('cc[0:c1len-1].ra = cc[0:c1len-1].RA'+label1)
+            re = execute('cc[0:c1len-1].dec = cc[0:c1len-1].DEC'+label1)
+            break
+        endif
+        cc = replicate(cc,c1len+c2len-matchlen)
+        ;; if no matches...
+        if (matchlen eq 0) then begin
+            for t = 0,n_tags(cat1)-1 do cc[0:c1len-1].(t) = cat1.(t)                ;; add catalog 1 data
+            re = execute('cc[0:c1len-1].ra = cc[0:c1len-1].RA'+label1)
+            re = execute('cc[0:c1len-1].dec = cc[0:c1len-1].DEC'+label1)
+            for t = 0,n_tags(cat2)-1 do cc[c1len:-1].(n_tags(cat1)+t) = cat2.(t)    ;; add catalog 2 data
+            re = execute('cc[c1len:-1].ra = cc[c1len:-1].RA'+label2)
+            re = execute('cc[c1len:-1].dec = cc[c1len:-1].DEC'+label2)
+        ;; if matches... 
+        endif else begin
+            for t = 0,n_tags(cat1)-1 do cc[ic1m].(t) = cat1[ic1m].(t)               ;; add matched catalog 1 data
+            for t = 0,n_tags(cat2)-1 do cc[ic1m].(n_tags(cat1)+t) = cat2[ic2m].(t)  ;; add matched catalog 2 data
+            re = execute('cc[ic1m].'+sep_label+' = sep')
+            re = execute('cc[ic1m].ra = cc[ic1m].RA'+label1)
+            re = execute('cc[ic1m].dec = cc[ic1m].DEC'+label1)
+            ;; add remaining catalog 1 data to cc
+            if (c1len-matchlen gt 0) then begin
+                ic1_remain = exclude(cat1,ic1m)
+                for t = 0,n_tags(cat1)-1 do cc[ic1_remain].(t) = cat1[ic1_remain].(t)
+                re = execute('cc[ic1_remain].ra = cc[ic1_remain].RA'+label1)
+                re = execute('cc[ic1_remain].dec = cc[ic1_remain].DEC'+label1)
+            endif
+            ;; add remaining catalog 2 data to cc
+            if (c2len-matchlen gt 0) then begin
+                ic2_remain = exclude(cat2,ic2m)
+                for t = 0,n_tags(cat2)-1 do cc[c1len:-1].(n_tags(cat1)+t) = cat2[ic2_remain].(t)
+                re = execute('cc[c1len:-1].ra = cc[c1len:-1].RA'+label2)
+                re = execute('cc[c1len:-1].dec = cc[c1len:-1].DEC'+label2)
+            endif
+        endelse
+    end
 	'LEFT': begin
-				;; use first source of each catalog to combine catalog tags
-				cc = struct_addtags(cat1[0],cat2[0])
-			 	;; clear the values from the tag combine
-				for t = 0,n_tags(cc)-1 do if (typename(cc.(t)) eq 'STRING') then cc.(t) = '' else $
-																			     cc.(t) = -9999.
-				;; add default separation tag
-				struct_add_field,cc,sep_label,-9999.
-				cc = replicate(cc,c1len)
-				;; add all catalog 1 data to cc
-				for t = 0,n_tags(cat1)-1 do cc.(t) = cat1.(t)
-				;; add matched catalog 2 data
-				if (matchlen gt 0) then begin
-					for t = 0,n_tags(cat2)-1 do cc[ic1m].(n_tags(cat1)+t) = cat2[ic2m].(t)
-					re = execute('cc[ic1m].'+sep_label+' = sep')
-				endif
-			end
+        ;; use first source of each catalog to combine catalog tags
+        cc = struct_addtags(cat1[0],cat2[0])
+        ;; clear the values from the tag combine
+        for t = 0,n_tags(cc)-1 do if (typename(cc.(t)) eq 'STRING') then cc.(t) = '' else $
+                                                                         cc.(t) = -9999.
+        ;; add default separation tag
+        struct_add_field,cc,sep_label,-9999.
+        cc = replicate(cc,c1len)
+        ;; add all catalog 1 data to cc
+        for t = 0,n_tags(cat1)-1 do cc.(t) = cat1.(t)
+        ;; add matched catalog 2 data
+        if (matchlen gt 0) then begin
+            for t = 0,n_tags(cat2)-1 do cc[ic1m].(n_tags(cat1)+t) = cat2[ic2m].(t)
+            re = execute('cc[ic1m].'+sep_label+' = sep')
+        endif
+    end
+	'SUPPLEMENT': begin
+	    ;; use tags from second catalog
+	    cc = cat2[0] 
+        ;; clear the values from the tag
+        for t = 0,n_tags(cc)-1 do if (typename(cc.(t)) eq 'STRING') then cc.(t) = '' else $
+                                                                         cc.(t) = -9999.
+        ;; check if keyword set to append tags and not data
+        if keyword_set(tags_only) then begin
+            cc = replicate(cc,c1len)
+            for t = 0,n_tags(cat1)-1 do cc[0:c1len-1].(t) = cat1.(t)                ;; retain catalog 1 data
+            break
+        endif
+        cc = replicate(cc,c1len+c2len-matchlen)
+        ;; if no matches...
+        if (matchlen eq 0) then begin
+            for t = 0,n_tags(cat1)-1 do cc[0:c1len-1].(t) = cat1.(t)                ;; add catalog 1 data
+            for t = 0,n_tags(cat2)-1 do cc[c1len:-1].(n_tags(cat1)+t) = cat2.(t)    ;; add catalog 2 data
+        ;; if matches... 
+        endif else begin
+            for t = 0,n_tags(cat1)-1 do cc[ic1m].(t) = cat1[ic1m].(t)                               ;; add matched catalog 1 data
+            for t = 0,n_tags(cat2)-n_tags(cat1)-1 do cc[ic1m].(n_tags(cat1)+t) = cat2[ic2m].(t)     ;; add matched catalog 2 data
+            ;; add remaining catalog 1 data to cc
+            if (c1len-matchlen gt 0) then begin
+                ic1_remain = exclude(cat1,ic1m)
+                for t = 0,n_tags(cat1)-1 do cc[ic1_remain].(t) = cat1[ic1_remain].(t)
+            endif
+            ;; add remaining catalog 2 data to cc
+            if (c2len-matchlen gt 0) then begin
+                ic2_remain = exclude(cat2,ic2m)
+                for t = 0,n_tags(cat2)-1 do cc[c1len:-1].(t) = cat2[ic2_remain].(t)
+            endif
+        endelse
+	end
 	else: begin
 	        ;; what are you doing?
 			print, 'NO JOIN TYPE SPECIFIED'

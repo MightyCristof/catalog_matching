@@ -31,8 +31,8 @@ print, 'Running: MULTI_CAT_MATCH'
 
 ;; directories for various catalogs, ordered
 sdss_dir = '/Volumes/Dupree/Chris_xMatch_survey/surveys/SDSS/DR14/'
+zz_dir = '/Volumes/Dupree/Chris_xMatch_survey/surveys/xMatch/qso_zsupp/'
 xd_dir = '/Volumes/Dupree/Chris_xMatch_survey/surveys/XDQSOz/'
-z_dir = '/Volumes/Dupree/Chris_xMatch_survey/surveys/xMatch/qso_z_match/'
 wise_dir = '/Volumes/Dupree/Chris_xMatch_survey/surveys/WISE/AllWISE/'
 unw_dir = '/Volumes/Dupree/Chris_xMatch_survey/surveys/WISE/unWISE/'
 uk_dir = '/Volumes/Dupree/Chris_xMatch_survey/surveys/UKIDSS/DR10/'
@@ -40,8 +40,8 @@ uk_dir = '/Volumes/Dupree/Chris_xMatch_survey/surveys/UKIDSS/DR10/'
 
 ;; files within catalog directories
 sdss_file = file_search(sdss_dir+'sdss-dr14-cat-part*')
+zz_file = file_search(z_dir+'qso-zsupp-cat-part*')
 xd_file = file_search(xd_dir+'xdqso-z-cat-part*')
-z_file = file_search(z_dir+'qso-z-cat-part*')
 wise_file = file_search(wise_dir+'wise-allwise-cat-part*')
 unw_file = file_search(unw_dir+'unwise-dr10sed-cat-part*')
 uk_file = file_search(uk_dir+'ukidss-las10-cat-part*')
@@ -53,15 +53,15 @@ for i = 0,n_elements(sdss_file)-1 do begin
 	temp = strsplit(sdss_file[i],'-.',/extract)
 	sdss_sub[i] = temp[-3]
 endfor
+zz_sub = strarr(n_elements(z_file))
+for i = 0,n_elements(zz_file)-1 do begin
+	temp = strsplit(zz_file[i],'-.',/extract)
+	zz_sub[i] = temp[-3]
+endfor
 xd_sub = strarr(n_elements(xd_file))
 for i = 0,n_elements(xd_file)-1 do begin
 	temp = strsplit(xd_file[i],'-.',/extract)
 	xd_sub[i] = temp[-3]
-endfor
-z_sub = strarr(n_elements(z_file))
-for i = 0,n_elements(z_file)-1 do begin
-	temp = strsplit(z_file[i],'-.',/extract)
-	z_sub[i] = temp[-3]
 endfor
 wise_sub = strarr(n_elements(wise_file))
 for i = 0,n_elements(wise_file)-1 do begin
@@ -90,44 +90,64 @@ for i = 0,n_elements(sdss_file)-1 do begin
 	print, '    SDSS - '
 	sdss = mrdfits(sdss_file[i],1)
 
-	;; XDQSO
+	;; Supplement additional redshift data from other work
+	print, '    x +Redshift - '
+	match,sdss_sub[i],zz_sub,isdss,iz
+	if (total(iz) eq -1) then begin
+	    zz = mrdfits(zz_file[0],rows=0,1)
+	    r = cat_match(r,zz,'_SDSS','_SDSS',0.5,join='SUPPLEMENT',/tags_only)
+	endif else begin
+	    zz = mrdfits(zz_file[iz],1)
+	    r = cat_match(r,zz,'_SDSS','_SDSS',0.5,join='SUPPLEMENT')
+	endelse
+	undefine,zz
+    
+    ;; XDQSO
 	print, '    x XDQSO - '
 	match,sdss_sub[i],xd_sub,isdss,ixd
-	if (total(ixd) eq -1) then xd = mrdfits(xd_file[0],rows=0,1) else $
-						       xd = mrdfits(xd_file[ixd],1)
-	r = cat_match(sdss,xd,'_SDSS','_XDQSO',0.5,join='OUTER')
+	if (total(ixd) eq -1) then begin
+	    xd = mrdfits(xd_file[0],rows=0,1)
+	    r = cat_match(sdss,xd,'_SDSS','_XDQSO',0.5,join='OUTER',/tags_only)
+    endif else begin
+		xd = mrdfits(xd_file[ixd],1)
+	    r = cat_match(sdss,xd,'_SDSS','_XDQSO',0.5,join='OUTER')
+	endelse
 	undefine,sdss,xd
-
-	;; Extra redshift data
-	print, '    x +Redshift - '
-	match,sdss_sub[i],z_sub,isdss,iz
-	if (total(iz) eq -1) then zz = mrdfits(z_file[0],rows=0,1) else $
-					          zz = mrdfits(z_file[iz],1)
-	r = cat_match(r,zz,'','_ZALL',3.0,join='LEFT')
-	undefine,zz
 
 	;; WISE
 	print, '    x WISE - '
 	match,sdss_sub[i],wise_sub,isdss,iwise
-	if (total(iwise) eq -1) then wise = mrdfits(wise_file[0],rows=0,1) else $
-	                             wise = mrdfits(wise_file[iwise],1)
-	r = cat_match(r,wise,'','_WISE',3.0,join='INNER')
+	if (total(iwise) eq -1) then begin
+	    wise = mrdfits(wise_file[0],rows=0,1)
+	    r = cat_match(r,wise,'','_WISE',3.0,join='INNER',/tags_only)
+	endif else begin
+	    wise = mrdfits(wise_file[iwise],1)
+	    r = cat_match(r,wise,'','_WISE',3.0,join='INNER')
+	endelse
 	undefine,wise
 	
 	;; unWISE
 	print, '    x unWISE - '
 	match,sdss_sub[i],unw_sub,isdss,iunw
-	if (total(iunw) eq -1) then unw = mrdfits(unw_file[0],rows=0,1) else $
-	                            unw = mrdfits(unw_file[iunw],1)
-	r = cat_match(r,unw,'','_UNWISE',0.5,join='LEFT')
+	if (total(iunw) eq -1) then begin
+	    unw = mrdfits(unw_file[0],rows=0,1)
+	    r = cat_match(r,unw,'','_UNWISE',0.5,join='LEFT',/tags_only)
+	endif else begin
+	    unw = mrdfits(unw_file[iunw],1)
+	    r = cat_match(r,unw,'','_UNWISE',0.5,join='LEFT')
+	endelse
 	undefine,unw
 	
 	;; UKIDSS
 	print, '    x UKIDSS - '
 	match,sdss_sub[i],uk_sub,isdss,iuk
-	if (total(iuk) eq -1) then uk = mrdfits(uk_file[0],rows=0,1) else $
-	                           uk = mrdfits(uk_file[iuk],1)
-	r = cat_match(r,uk_all,'','_UKIDSS',3.0,join='LEFT')
+	if (total(iuk) eq -1) then begin
+	    uk = mrdfits(uk_file[0],rows=0,1) else $
+	    r = cat_match(r,uk_all,'','_UKIDSS',3.0,join='LEFT',/tags_only)
+	endif else begin
+	    uk = mrdfits(uk_file[iuk],1)
+	    r = cat_match(r,uk_all,'','_UKIDSS',3.0,join='LEFT')
+	endelse
 	undefine,uk
 	
 	;; GALEX
