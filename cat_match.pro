@@ -73,7 +73,7 @@ FUNCTION cat_match, cat1, $
 if keyword_set(join) then join = strupcase(join) else join = 'NONE'
 
 ;; new tag label for separation distance of calls to SPHEREMATCH()
-sep_label = 'SEPARATION_'+label2
+sep_label = 'SEPARATION'+label2
 ;; length of catalogs
 c1len = n_elements(cat1)
 c2len = n_elements(cat2)
@@ -110,8 +110,8 @@ case join of
         ;; use first source of each catalog to combine catalog tags
         cc = struct_addtags(cat1[0],cat2[0])
         ;; clear the values from the tag combine
-        for t = 0,n_tags(cc)-1 do if (typename(r.(t)) eq 'STRING') then cc.(t) = '' else $
-                                                                        cc.(t) = -9999.
+        for t = 0,n_tags(cc)-1 do if (typename(cc.(t)) eq 'STRING') then cc.(t) = '' else $
+                                                                         cc.(t) = -9999.
         ;; add default separation, RA, DEC tags
         struct_add_field,cc,sep_label,-9999.
         struct_add_field,cc,'RA',-9999.

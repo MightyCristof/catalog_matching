@@ -40,7 +40,7 @@ uk_dir = '/Volumes/Dupree/Chris_xMatch_survey/UKIDSS/DR10/'
 
 ;; files within catalog directories
 sdss_file = file_search(sdss_dir+'sdss-dr14-cat-part*')
-zz_file = file_search(z_dir+'qso-zsupp-cat-part*')
+zz_file = file_search(zz_dir+'qso-zsupp-cat-part*')
 xd_file = file_search(xd_dir+'xdqso-z-cat-part*')
 wise_file = file_search(wise_dir+'wise-allwise-cat-part*')
 unw_file = file_search(unw_dir+'unwise-dr10sed-cat-part*')
@@ -53,7 +53,7 @@ for i = 0,n_elements(sdss_file)-1 do begin
 	temp = strsplit(sdss_file[i],'-.',/extract)
 	sdss_sub[i] = temp[-3]
 endfor
-zz_sub = strarr(n_elements(z_file))
+zz_sub = strarr(n_elements(zz_file))
 for i = 0,n_elements(zz_file)-1 do begin
 	temp = strsplit(zz_file[i],'-.',/extract)
 	zz_sub[i] = temp[-3]
@@ -95,24 +95,24 @@ for i = 0,n_elements(sdss_file)-1 do begin
 	match,sdss_sub[i],zz_sub,isdss,iz
 	if (total(iz) eq -1) then begin
 	    zz = mrdfits(zz_file[0],rows=0,1)
-	    r = cat_match(r,zz,'_SDSS','_SDSS',0.5,join='SUPPLEMENT',/tags_only)
+	    r = cat_match(sdss,zz,'_SDSS','_SDSS',0.5,join='SUPPLEMENT',/tags_only)
 	endif else begin
 	    zz = mrdfits(zz_file[iz],1)
-	    r = cat_match(r,zz,'_SDSS','_SDSS',0.5,join='SUPPLEMENT')
+	    r = cat_match(sdss,zz,'_SDSS','_SDSS',0.5,join='SUPPLEMENT')
 	endelse
-	undefine,zz
+	;undefine,sdss,zz
     
     ;; XDQSO
 	print, '    x XDQSO - '
 	match,sdss_sub[i],xd_sub,isdss,ixd
 	if (total(ixd) eq -1) then begin
 	    xd = mrdfits(xd_file[0],rows=0,1)
-	    r = cat_match(sdss,xd,'_SDSS','_XDQSO',0.5,join='OUTER',/tags_only)
+	    r = cat_match(r,xd,'_SDSS','_XDQSO',0.5,join='OUTER',/tags_only)
     endif else begin
 		xd = mrdfits(xd_file[ixd],1)
-	    r = cat_match(sdss,xd,'_SDSS','_XDQSO',0.5,join='OUTER')
+	    r = cat_match(r,xd,'_SDSS','_XDQSO',0.5,join='OUTER')
 	endelse
-	undefine,sdss,xd
+	;undefine,xd
 
 	;; WISE
 	print, '    x WISE - '
@@ -124,7 +124,7 @@ for i = 0,n_elements(sdss_file)-1 do begin
 	    wise = mrdfits(wise_file[iwise],1)
 	    r = cat_match(r,wise,'','_WISE',3.0,join='INNER')
 	endelse
-	undefine,wise
+	;undefine,wise
 	
 	;; unWISE
 	print, '    x unWISE - '
@@ -136,19 +136,19 @@ for i = 0,n_elements(sdss_file)-1 do begin
 	    unw = mrdfits(unw_file[iunw],1)
 	    r = cat_match(r,unw,'','_UNWISE',0.5,join='LEFT')
 	endelse
-	undefine,unw
+	;undefine,unw
 	
 	;; UKIDSS
 	print, '    x UKIDSS - '
 	match,sdss_sub[i],uk_sub,isdss,iuk
 	if (total(iuk) eq -1) then begin
 	    uk = mrdfits(uk_file[0],rows=0,1)
-	    r = cat_match(r,uk_all,'','_UKIDSS',3.0,join='LEFT',/tags_only)
+	    r = cat_match(r,uk,'','_UKIDSS',3.0,join='LEFT',/tags_only)
 	endif else begin
 	    uk = mrdfits(uk_file[iuk],1)
-	    r = cat_match(r,uk_all,'','_UKIDSS',3.0,join='LEFT')
+	    r = cat_match(r,uk,'','_UKIDSS',3.0,join='LEFT')
 	endelse
-	undefine,uk
+	;undefine,uk
 	
 	;; GALEX
 ;	print, '    x GALEX - '
