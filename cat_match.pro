@@ -66,7 +66,7 @@ FUNCTION cat_match, cat1, $
                     label2, $
                     ang, $
 		            JOIN = join, $
-		            TAGS = tags
+		            TAGS_ONLY = tags_only
 
 
 ;; ensure join is set and uppercase
