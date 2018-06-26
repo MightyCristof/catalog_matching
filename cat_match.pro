@@ -192,8 +192,8 @@ case join of
             for t = 0,n_tags(cat2)-1 do cc[c1len:-1].(n_tags(cat1)+t) = cat2.(t)    ;; add catalog 2 data
         ;; if matches... 
         endif else begin
-            for t = 0,n_tags(cat1)-1 do cc[ic1m].(t) = cat1[ic1m].(t)                               ;; add matched catalog 1 data
-            for t = 0,n_tags(cat2)-n_tags(cat1)-1 do cc[ic1m].(n_tags(cat1)+t) = cat2[ic2m].(t)     ;; add matched catalog 2 data
+            for t = 0,n_tags(cat1)-1 do cc[ic1m].(t) = cat1[ic1m].(t)               ;; add matched catalog 1 data
+            for t = 0,n_tags(cat2)-n_tags(cat1)-1 do cc[ic1m].(n_tags(cat1)+t) = cat2[ic2m].(n_tags(cat1)+t)    ;; add matched catalog 2 data
             ;; add remaining catalog 1 data to cc
             if (c1len-matchlen gt 0) then begin
                 ic1_remain = exclude(cat1,ic1m)
