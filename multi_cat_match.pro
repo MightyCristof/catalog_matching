@@ -30,13 +30,13 @@ print, 'Running: MULTI_CAT_MATCH'
 
 
 ;; directories for various catalogs, ordered
-sdss_dir = '/Volumes/Dupree/Chris_xMatch_survey/surveys/SDSS/DR14/'
-zz_dir = '/Volumes/Dupree/Chris_xMatch_survey/surveys/xMatch/qso_zsupp/'
-xd_dir = '/Volumes/Dupree/Chris_xMatch_survey/surveys/XDQSOz/'
-wise_dir = '/Volumes/Dupree/Chris_xMatch_survey/surveys/WISE/AllWISE/'
-unw_dir = '/Volumes/Dupree/Chris_xMatch_survey/surveys/WISE/unWISE/'
-uk_dir = '/Volumes/Dupree/Chris_xMatch_survey/surveys/UKIDSS/DR10/'
-;galex_dir = '~/Research/surveys/GALEX/DR6/'
+sdss_dir = '/Volumes/Dupree/Chris_xMatch_survey/SDSS/DR14/'
+zz_dir = '/Volumes/Dupree/Chris_xMatch_survey/xMatch/qso_zsupp/'
+xd_dir = '/Volumes/Dupree/Chris_xMatch_survey/XDQSOz/'
+wise_dir = '/Volumes/Dupree/Chris_xMatch_survey/WISE/AllWISE/'
+unw_dir = '/Volumes/Dupree/Chris_xMatch_survey/WISE/unWISE/'
+uk_dir = '/Volumes/Dupree/Chris_xMatch_survey/UKIDSS/DR10/'
+;galex_dir = '/Volumes/Dupree/Chris_xMatch_survey/GALEX/DR6/'
 
 ;; files within catalog directories
 sdss_file = file_search(sdss_dir+'sdss-dr14-cat-part*')
