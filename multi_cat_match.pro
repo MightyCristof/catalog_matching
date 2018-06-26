@@ -142,7 +142,7 @@ for i = 0,n_elements(sdss_file)-1 do begin
 	print, '    x UKIDSS - '
 	match,sdss_sub[i],uk_sub,isdss,iuk
 	if (total(iuk) eq -1) then begin
-	    uk = mrdfits(uk_file[0],rows=0,1) else $
+	    uk = mrdfits(uk_file[0],rows=0,1)
 	    r = cat_match(r,uk_all,'','_UKIDSS',3.0,join='LEFT',/tags_only)
 	endif else begin
 	    uk = mrdfits(uk_file[iuk],1)
