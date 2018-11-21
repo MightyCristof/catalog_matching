@@ -81,6 +81,8 @@ c2len = n_elements(cat2)
 ;; call SPHEREMATCH() with largest catalog first
 if (c1len ge c2len) then re = execute('spherematch,cat1.RA'+label1+',cat1.DEC'+label1+',cat2.RA'+label2+',cat2.DEC'+label2+',ang/3600.,ic1m,ic2m,sep') else $
                          re = execute('spherematch,cat2.RA'+label2+',cat2.DEC'+label2+',cat1.RA'+label1+',cat1.DEC'+label1+',ang/3600.,ic2m,ic1m,sep')
+;; convert seperation from degrees to arcseconds
+sep *= 3600.
 ;; number of matches between both catalogs
 if (total(ic1m) eq -1) then matchlen = 0 else $
                             matchlen = n_elements(ic1m)
