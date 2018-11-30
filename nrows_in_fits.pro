@@ -1,21 +1,21 @@
 ;-----------------------------------------------------------------------------------------
 ; NAME:                                                                       IDL Function
-;   NROWS_IN_FITS
+;   nrows_in_fits
 ;   
 ; PURPOSE:
 ;   Return the number of rows in a given FITS file, or array of FITS files.
 ;   
 ; CALLING SEQUENCE:
-;   nrows = nrows_in_fits( file, [, /CUM ] )
+;   nrows = nrows_in_fits( files, [, /CUM ] )
 ;	
 ; INPUTS:
-;   file			- Input string or string array of FITS files.
+;   files			- Input string or string array of FITS files.
 ;   
 ; OPTIONAL INPUTS:
-;   CUM				- Cumulative sum for array of input FITS files.
-;   
+;   CUM             - Cumulative sum for array of input FITS files.
 ; OUTPUTS:
-;   nrows			- Number of rows in FITS file.
+;   rows			- Vector with length matching files, containing the number
+;                     of rows in each FITS file.
 ;   
 ; OPTIONAL OUTPUTS:
 ;  
@@ -35,24 +35,22 @@
 ; REVISION HISTORY:
 ;   2018-Apr-25  Written by C. M. Carroll (Dartmouth)
 ;-----------------------------------------------------------------------------------------
-FUNCTION nrows_in_fits, file, $
-						CUM = cum
+FUNCTION nrows_in_fits, files, $
+                        CUM = cum
 
 
-sz = size(file,/dim)							                ;; check input array size; single string = 0
-if (sz eq 0) then cum = 1						                ;; for single string, automatically cumulative
-if keyword_set(cum) then nrows = long64(0) else $
-                         nrows = lon64arr(sz)		            ;; if CUM not set, output array of rows
+rows = lon64arr(n_elements(files))
 
-if (typename(file) eq 'STRING') then file = file_search(file)	;; enables call with "*" wildcard
-for i = 0,n_elements(file)-1 do begin
-	fits_open,file[i],fcb						                ;; opens FITS Control Block
-	if keyword_set(cum) then nrows += fcb.axis[1,1] else $		;; grab number of rows
-	                         nrows[i] = fcb.axis[1,1]
+if (typename(files) eq 'STRING') then files = file_search(files);; enables call with "*" wildcard
+for i = 0,n_elements(files)-1 do begin
+	fits_open,files[i],fcb						                ;; opens FITS Control Block
+	rows[i] = fcb.axis[1,1]		                                ;; grab number of rows               
 	fits_close,fcb
 endfor
 
-return, nrows
+if keyword_set(cum) then rows = total(rows)
+
+return, rows
 
 
 END
