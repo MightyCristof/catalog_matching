@@ -114,14 +114,16 @@ case join of
         ;; clear the values from the tag combine
         for t = 0,n_tags(cc)-1 do if (typename(cc.(t)) eq 'STRING') then cc.(t) = '' else $
                                                                          cc.(t) = -9999.
-        ;; add default separation, RA, DEC tags
-        struct_add_field,cc,sep_label,-9999.
+        ;; add default ObjID, RA, DEC, and separation tags
+        struct_add_field,cc,'OBJID',-9999LL
         struct_add_field,cc,'RA',-9999.
         struct_add_field,cc,'DEC',-9999.
+        struct_add_field,cc,sep_label,-9999.
         ;; check if keyword set to append tags and not data
         if keyword_set(tags_only) then begin
             cc = replicate(cc,c1len)
             for t = 0,n_tags(cat1)-1 do cc[0:c1len-1].(t) = cat1.(t)                ;; retain catalog 1 data
+            re = execute('cc[0:c1len-1].objid = cc[0:c1len-1].OBJID'+label1)
             re = execute('cc[0:c1len-1].ra = cc[0:c1len-1].RA'+label1)
             re = execute('cc[0:c1len-1].dec = cc[0:c1len-1].DEC'+label1)
             break
@@ -130,22 +132,26 @@ case join of
         ;; if no matches...
         if (matchlen eq 0) then begin
             for t = 0,n_tags(cat1)-1 do cc[0:c1len-1].(t) = cat1.(t)                ;; add catalog 1 data
+            re = execute('cc[0:c1len-1].objid = cc[0:c1len-1].OBJID'+label1)
             re = execute('cc[0:c1len-1].ra = cc[0:c1len-1].RA'+label1)
             re = execute('cc[0:c1len-1].dec = cc[0:c1len-1].DEC'+label1)
             for t = 0,n_tags(cat2)-1 do cc[c1len:-1].(n_tags(cat1)+t) = cat2.(t)    ;; add catalog 2 data
+            re = execute('cc[c1len:-1].objid = cc[c1len:-1].OBJID'+label2)
             re = execute('cc[c1len:-1].ra = cc[c1len:-1].RA'+label2)
             re = execute('cc[c1len:-1].dec = cc[c1len:-1].DEC'+label2)
         ;; if matches... 
         endif else begin
             for t = 0,n_tags(cat1)-1 do cc[ic1m].(t) = cat1[ic1m].(t)               ;; add matched catalog 1 data
             for t = 0,n_tags(cat2)-1 do cc[ic1m].(n_tags(cat1)+t) = cat2[ic2m].(t)  ;; add matched catalog 2 data
-            re = execute('cc[ic1m].'+sep_label+' = sep')
+            re = execute('cc[ic1m].objid = cc[ic1m].OBJID'+label1)
             re = execute('cc[ic1m].ra = cc[ic1m].RA'+label1)
             re = execute('cc[ic1m].dec = cc[ic1m].DEC'+label1)
+            re = execute('cc[ic1m].'+sep_label+' = sep')
             ;; add remaining catalog 1 data to cc
             if (c1len-matchlen gt 0) then begin
                 ic1_remain = exclude(cat1,ic1m)
                 for t = 0,n_tags(cat1)-1 do cc[ic1_remain].(t) = cat1[ic1_remain].(t)
+                re = execute('cc[ic1_remain].objid = cc[ic1_remain].OBJID'+label1)
                 re = execute('cc[ic1_remain].ra = cc[ic1_remain].RA'+label1)
                 re = execute('cc[ic1_remain].dec = cc[ic1_remain].DEC'+label1)
             endif
@@ -153,6 +159,7 @@ case join of
             if (c2len-matchlen gt 0) then begin
                 ic2_remain = exclude(cat2,ic2m)
                 for t = 0,n_tags(cat2)-1 do cc[c1len:-1].(n_tags(cat1)+t) = cat2[ic2_remain].(t)
+                re = execute('cc[c1len:-1].objid = cc[c1len:-1].OBJID'+label2)
                 re = execute('cc[c1len:-1].ra = cc[c1len:-1].RA'+label2)
                 re = execute('cc[c1len:-1].dec = cc[c1len:-1].DEC'+label2)
             endif

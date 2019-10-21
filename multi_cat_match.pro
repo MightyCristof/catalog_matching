@@ -29,6 +29,7 @@
 ; REVISION HISTORY:
 ;   2017-May-22  Written by Christopher M. Carroll (Dartmouth)
 ;-----------------------------------------------------------------------------------------
+PRO multi_cat_match
 print, 'Running: MULTI_CAT_MATCH'
 
 
@@ -38,13 +39,13 @@ catlen = n_elements(cat)
 
 ;; catalog directories
 cat_dir = cat+'_DIR'
-dir = ['/Volumes/Dupree/Chris_xMatch_survey/SDSS/DR14/', $
-       '/Volumes/Dupree/Chris_xMatch_survey/xMatch/qso_zsupp/', $
-       '/Volumes/Dupree/Chris_xMatch_survey/XDQSOz/', $
-       '/Volumes/Dupree/Chris_xMatch_survey/WISE/AllWISE/', $
-       '/Volumes/Dupree/Chris_xMatch_survey/WISE/unWISE/', $
-       '/Volumes/Dupree/Chris_xMatch_survey/UKIDSS/DR10/', $
-       '/Volumes/Dupree/Chris_xMatch_survey/GALEX/DR6/' $
+dir = ['/Users/ccarroll/Research/surveys/SDSS/DR14/', $
+       '/Users/ccarroll/Research/surveys/xMatch/qso_zsupp/', $
+       '/Users/ccarroll/Research/surveys/XDQSOz/', $
+       '/Users/ccarroll/Research/surveys/WISE/AllWISE/', $
+       '/Users/ccarroll/Research/surveys/WISE/unWISE/', $
+       '/Users/ccarroll/Research/surveys/UKIDSS/DR10/', $
+       '/Users/ccarroll/Research/surveys/GALEX/GUVCat/' $
        ]
 ;; catalog files
 cat_file = cat+'_FILE'
@@ -54,6 +55,7 @@ cat_ind = 'I'+cat
 cat_suff = cat+'_SUFF'
 ;; catalog join type
 cat_join = cat+'_JOIN'
+;;      SDSS   +redshifts   XDQSOz  WISE    unWISE UKIDSS GALEX
 join = ['NONE','SUPPLEMENT','OUTER','INNER','LEFT','LEFT','LEFT']
 ;; catalog separation
 cat_sep = cat+'_SEP'
