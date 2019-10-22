@@ -1,6 +1,7 @@
 PRO match2wise_dec, data, $
 					prefix, $
-					col
+					col, $
+					COMPRESS = compress
 
 
 ;; example prefix, declination column (COLUMNS STARTS AT 1)
@@ -70,7 +71,7 @@ endfor
 print, "Total number of rows: Start="+strtrim(nrows,2)+"    End="+strtrim(totrows,2)
 ;toc
 
-spawn,'for file in *part*.fits; do gzip "$file"; done'
+if keyword_set(compress) then spawn,'for file in *part*.fits; do gzip "$file"; done'
 
 
 end
