@@ -1,5 +1,5 @@
 PRO match_samp2xcat, data
-
+;; match "data.fits" to xMatch catalog and produce output file
 
 dir_xcat = '/Users/ccarroll/Research/surveys/x-Match/SDSSxWISE/'
 join = 'LEFT'
@@ -34,7 +34,7 @@ for i = 0,n_elements(data_samp)-1 do begin
     tags = tag_names(samp)
     sffx = strsplit(tags[where(strmatch(tags,'*DEC*'))],'DEC',/regex,/extract)
     
-    r = cat_match(samp,xcat,sffx[0],'',60.,join=join)
+    r = cat_match(samp,xcat,sffx[0],'',12.,join=join)
     mwrfits,r,'xmatch-'+data_samp[i]
 endfor
 
