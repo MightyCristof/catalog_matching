@@ -1,6 +1,6 @@
 ;-----------------------------------------------------------------------------------------
 ; NAME:                                                                       IDL Function
-;	match2xcat
+;	match2ccat
 ;   
 ; PURPOSE:
 ;   
@@ -29,18 +29,16 @@
 ; REVISION HISTORY:
 ;   2021-Sep-21  Written by Christopher M. Carroll (Dartmouth)
 ;-----------------------------------------------------------------------------------------
-PRO match2xcat, file, $
+PRO match2ccat, file, $
                 ra_str, $
                 dec_str, $
-                sep
+                sep, 
+                CLEAN = clean
                 
 
-;; path to xMatch catalog
-xcat_dir = '/Users/ccarroll/Research/surveys/x-Match/SDSSxWISE'
-
 ;; read data
-r = mrdfits(file,1)
-tags = tag_names(r)
+data = mrdfits(file,1)
+tags = tag_names(data)
 idec = where(strmatch(tags,dec_str))
 
 ;; make a temporary directory to split file by declination
@@ -50,60 +48,53 @@ pushd, temp_dir
 
 ;; separate file by WISE declination
 match2wise_dec,'../'+file,'part',idec+1
-;; match to xMatch catalog
-;; all catalogs
-cat = [file, $
-       'XMATCH']
-catlen = n_elements(cat)
 
-;; catalog directories
-cat_dir = cat+'_DIR'
-dir = ['./', $
-       '/Users/ccarroll/Research/surveys/x-Match/SDSSxWISE/']
-;; catalog files
-cat_file = cat+'_FILE'
-;; catalog indices
-cat_ind = 'I'+cat
-;; catalog suffix
-cat_suff = cat+'_SUFF'
-;; catalog join type
-cat_join = cat+'_JOIN'
-;;      YSE    xMatch
-join = ['NONE','LEFT']
-;; catalog separation
-cat_sep = cat+'_SEP'
-
-cat_part = cat+'_PART'
-for i = 0,catlen-1 do begin
-    re = execute(cat_dir[i]+' = dir[i]')
-    re = execute(cat_file[i]+' = file_search('+cat_dir[i]+'+"*part*")')
-    re = execute(cat_part[i]+' = strarr(n_elements('+cat_file[i]+'))')
-    re = execute('nparts = n_elements('+cat_part[i]+')')
-    for p = 0,nparts-1 do begin
-        re = execute('temp = strsplit('+cat_file[i]+'[p],"-.",/extract)')
-        ipart = where(strmatch(temp,'part*'),plen)
-        if (plen eq 0) then continue else $
-                            re = execute(cat_part[i]+'[p] = temp[ipart]')
-    endfor
+;; pdata parts array for matching
+data_file = file_search()
+ndata = n_elements(data_file)
+data_part = strarr(ndata)
+for i = 0,ndata-1 do begin
+    temp = strsplit(data_file[i],'-.',/extract)
+    ipart = where(strmatch(temp,'part*'),plen)
+    data_part[i] = temp[ipart]
 endfor
 
-
-
-
-
-
-
-
-part_file = file_search()
-nparts = n_elements(part_file)
-xcat_part = file_search(xcat_dir+'/*')
-for i = 0,nparts-1 do begin
-        
-
-
-
+;; ccat parts array for matching
+ccat_dir = '/Users/ccarroll/Research/surveys/x-Match/SDSSxWISE'
+ccat_file = file_search(ccat_dir+'/*.fits.gz') 
+nccat = n_elements(ccat_file)
+ccat_part = strarr(nccat)
+for i = 0,nccat-1 do begin
+    temp = strsplit(ccat_file[i],'-.',/extract)
+    ipart = where(strmatch(temp,'part*'),plen)
+    ccat_part[i] = temp[ipart]
 endfor
+
+for i = 0,ndata-1 do begin
+    print, 'MATCHING: '+data_part[i]
+    match,data_part[i],ccat_part,idata,iccat
+    if (idata eq -1) then continue
+	rdata = mrdfits(data_file[i],1,/silent)
+	rccat = mrdfits(ccat_file[iccat],1,/silent)
+    ;; match data to ccat
+    r = cat_match(rdata,rccat,(strsplit(ra_str,'RA*',/regex,/extract))[0],'',sep,join='LEFT')
+    mwrfits,r,data_file[i],/create
+endfor
+
+;; concatenate
+rr = mrdfits(data_file[0],1)
+for i = 1,ndata-1 do rr = [rr,mrdfits(data_file[i],1)]
+
+;; write to file
+popd
+mwrfits,rr,(strsplit(file,'.fits',/regex,/extract))[0]+'_xmatch.fits',/create
+
+;; clean up
+if keyword_set(clean) then file_delete, temp_dir, /recursive
 
 
 END
+
+
+
 
